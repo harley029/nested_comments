@@ -1,0 +1,24 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Add a new Comment{% endblock %}
+
+{% block content %}
+<main>
+    <div>
+        <h1>Add a Comment for "{{ post.title }}"</h1>
+        <div>
+            <form method="post" action="{% url 'posts:post_comment' post.id %}" id="comment_form" enctype="multipart/form-data" novalidate="">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div>
+                    <div>
+                        <input type="submit" value="Save" name="save">
+                        <input type="submit" value="Cancel" name="cancel">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <br class="clear">
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "blog/base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+  <h1>{{ post.title }}</h1>
+  <p>Published {{ post.publish }} by {{ post.author }}</p>
+  {{ post.body }}
+  <h2>{{ top_level_comments.count }} comment{{ top_level_comments.count|pluralize }}</h2>
+  {% for comment in top_level_comments %}
+    <div class="comment">
+      {% include "blog/post/includes/comment.html" with comment=comment post=post %}
+    </div>
+  {% empty %}
+    <p>There are no comments.</p>
+  {% endfor %}
+  <a href="{% url 'posts:post_comment' post.id %}">Add a new Comment</a>
+{% endblock %}

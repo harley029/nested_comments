@@ -1,0 +1,33 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Reply to Comment{% endblock %}
+
+{% block content %}
+<main>
+    <div>
+        <h1>Reply to Comment by
+        {% if parent_comment.author %}
+        "{{ parent_comment.author.username }}"
+        {% else %}
+        "{{ parent_comment.name }}"
+        {% endif %}
+        </h1>
+        <div>
+            <p>{{ parent_comment.body|safe }}</p>
+            <form method="post" action="{% url 'posts:comment_reply' pk=post.id parent_comment_id=parent_comment.id %}"
+                enctype="multipart/form-data"
+                novalidate="">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div>
+                    <div>
+                        <input type="submit" value="Save" name="save">
+                        <input type="submit" value="Cancel" name="cancel">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <br class="clear">
+    </div>
+</main>
+{% endblock %}
