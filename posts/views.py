@@ -8,6 +8,26 @@ from posts.models import Post, Comment
 from posts.forms import PostForm, CommentForm
 
 
+class BaseCommentView(TemplateView):
+
+    def get_post_and_parent_comment(self, kwargs):
+        post_id = kwargs.get("pk") or kwargs.get("post_id")
+        post = get_object_or_404(Post, pk=post_id)
+        parent_comment_id = kwargs.get("parent_comment_id")
+        parent_comment = (
+            get_object_or_404(Comment, pk=parent_comment_id)
+            if parent_comment_id
+            else None
+        )
+        return post, parent_comment
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0]
+        return request.META.get("REMOTE_ADDR")
+
+
 class PostListView(ListView):
     queryset = Post.objects.all()
     context_object_name = "posts"
@@ -29,7 +49,6 @@ class PostDetailView(DetailView):
         context["top_level_comments"] = top_level_comments
         return context
 
-
 @method_decorator(login_required, name="dispatch")
 class AddPostView(TemplateView):
     template_name = "blog/post/add_post.html"
@@ -50,20 +69,18 @@ class AddPostView(TemplateView):
         return self.render_to_response({"form": form})
 
 
-class AddCommentView(TemplateView):
+class AddCommentView(BaseCommentView):
     template_name = "blog/post/add_comment.html"
 
     def get(self, request, *args, **kwargs):
-        post_id = self.kwargs.get("post_id")
-        post = get_object_or_404(Post, pk=post_id)
+        post, _ = self.get_post_and_parent_comment(kwargs)
         form = CommentForm(user=request.user)
         return self.render_to_response({"form": form, "post": post})
 
     def post(self, request, *args, **kwargs):
-        post_id = self.kwargs.get("post_id")
-        post = get_object_or_404(Post, pk=post_id)
+        post, _ = self.get_post_and_parent_comment(kwargs)
         if "cancel" in request.POST:
-            return redirect("posts:post_detail", pk=post_id)
+            return redirect("posts:post_detail", pk=post.pk)
         form = CommentForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -72,45 +89,22 @@ class AddCommentView(TemplateView):
             if request.user.is_authenticated:
                 comment.author = request.user
             comment.save()
-            return redirect("posts:post_detail", pk=post_id)
-        else:
-            return self.render_to_response({"form": form, "post": post})
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0]
-        else:
-            ip = request.META.get("REMOTE_ADDR")
-        return ip
+            return redirect("posts:post_detail", pk=post.pk)
+        return self.render_to_response({"form": form, "post": post})
 
 
-class ReplyCommentView(TemplateView):
+class ReplyCommentView(BaseCommentView):
     template_name = "blog/post/reply_comment.html"
 
     def get(self, request, *args, **kwargs):
-        post_pk = kwargs.get("pk")
-        parent_comment_id = kwargs.get("parent_comment_id")
-        post = get_object_or_404(Post, pk=post_pk)
-        parent_comment = get_object_or_404(Comment, pk=parent_comment_id)
-        form = CommentForm(
-            user=request.user, initial={"parent_comment": parent_comment.id}
-        )
-        return self.render_to_response(
-            {
-                "form": form,
-                "post": post,
-                "parent_comment": parent_comment,
-            }
-        )
+        post, parent_comment = self.get_post_and_parent_comment(kwargs)
+        form = CommentForm(user=request.user, initial={"parent_comment": parent_comment.id})
+        return self.render_to_response({"form": form, "post": post, "parent_comment": parent_comment})
 
     def post(self, request, *args, **kwargs):
-        post_id = kwargs.get("pk")
-        parent_comment_id = kwargs.get("parent_comment_id")
-        post = get_object_or_404(Post, pk=post_id)
-        parent_comment = get_object_or_404(Comment, pk=parent_comment_id)
+        post, parent_comment = self.get_post_and_parent_comment(kwargs)
         if "cancel" in request.POST:
-            return redirect("posts:post_detail", pk=post_id)
+            return redirect("posts:post_detail", pk=post.pk)
         form = CommentForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -120,23 +114,8 @@ class ReplyCommentView(TemplateView):
             if request.user.is_authenticated:
                 comment.author = request.user
             comment.save()
-            return redirect("posts:post_detail", pk=post_id)
-        else:
-            return self.render_to_response(
-                {
-                    "form": form,
-                    "post": post,
-                    "parent_comment": parent_comment,
-                }
-            )
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0]
-        else:
-            ip = request.META.get("REMOTE_ADDR")
-        return ip
+            return redirect("posts:post_detail", pk=post.pk)
+        return self.render_to_response({"form": form, "post": post, "parent_comment": parent_comment})
 
 
 class TextFileView(TemplateView):
