@@ -1,9 +1,47 @@
 import re
+from collections import deque
+from html.parser import HTMLParser
+
 from django import forms
 from captcha.fields import CaptchaField
 import bleach
 
 from posts.models import Post, Comment
+
+
+class TagValidator(HTMLParser):
+    def __init__(self, allowed_tags):
+        super().__init__()
+        self.allowed_tags = set(allowed_tags)
+        self.stack = deque()
+        self.errors = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.allowed_tags:
+            self.stack.append(tag)
+        else:
+            self.errors.append(f"Disallowed tag <{tag}> found.")
+
+    def handle_endtag(self, tag):
+        if tag in self.allowed_tags:
+            if not self.stack or self.stack[-1] != tag:
+                self.errors.append(f"Unmatched closing tag </{tag}>.")
+            else:
+                self.stack.pop()
+        else:
+            self.errors.append(f"Disallowed closing tag </{tag}> found.")
+
+    def error(self, message):
+        pass  # Переписать, что бы исключить остановку парсера из-за ошибок
+
+
+def validate_html(body, allowed_tags):
+    parser = TagValidator(allowed_tags)
+    parser.feed(body)
+    if parser.stack:
+        unclosed_tags = ", ".join(f"<{tag}>" for tag in parser.stack)
+        parser.errors.append(f"Unclosed tags detected: {unclosed_tags}")
+    return parser.errors
 
 
 class PostForm(forms.ModelForm):
@@ -71,7 +109,19 @@ class CommentForm(forms.ModelForm):
         body = self.cleaned_data["body"]
         allowed_tags = ["a", "code", "i", "strong"]
         allowed_attrs = {"a": ["href", "title"]}
-        cleaned_body = bleach.clean(body, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+
+        # Validate the original body for unmatched or disallowed tags
+        errors = validate_html(body, allowed_tags)
+        if errors:
+            raise forms.ValidationError(errors)
+
+        # Clean the body with bleach
+        cleaned_body = bleach.clean(
+            body,
+            tags=allowed_tags,
+            attributes=allowed_attrs,
+            strip=True,
+        )
         return cleaned_body
 
     def clean_image(self):
