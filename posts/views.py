@@ -3,6 +3,8 @@ from django.views.generic import ListView, TemplateView, DetailView
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 
 from posts.models import Post, Comment
 from posts.forms import PostForm, CommentForm
@@ -47,7 +49,19 @@ class PostDetailView(DetailView):
         context["comments"] = comments
         top_level_comments = self.object.comments.filter(parent_comment__isnull=True)
         context["top_level_comments"] = top_level_comments
+
+        page = self.request.GET.get("page", 1)
+        paginator = Paginator(top_level_comments, 2)
+        try:
+            comments_page = paginator.page(page)
+        except PageNotAnInteger:
+            comments_page = paginator.page(1)
+        except EmptyPage:
+            comments_page = paginator.page(paginator.num_pages)
+        context["comments_page"] = comments_page
+
         return context
+
 
 @method_decorator(login_required, name="dispatch")
 class AddPostView(TemplateView):
@@ -98,8 +112,12 @@ class ReplyCommentView(BaseCommentView):
 
     def get(self, request, *args, **kwargs):
         post, parent_comment = self.get_post_and_parent_comment(kwargs)
-        form = CommentForm(user=request.user, initial={"parent_comment": parent_comment.id})
-        return self.render_to_response({"form": form, "post": post, "parent_comment": parent_comment})
+        form = CommentForm(
+            user=request.user, initial={"parent_comment": parent_comment.id}
+        )
+        return self.render_to_response(
+            {"form": form, "post": post, "parent_comment": parent_comment}
+        )
 
     def post(self, request, *args, **kwargs):
         post, parent_comment = self.get_post_and_parent_comment(kwargs)
@@ -115,7 +133,9 @@ class ReplyCommentView(BaseCommentView):
                 comment.author = request.user
             comment.save()
             return redirect("posts:post_detail", pk=post.pk)
-        return self.render_to_response({"form": form, "post": post, "parent_comment": parent_comment})
+        return self.render_to_response(
+            {"form": form, "post": post, "parent_comment": parent_comment}
+        )
 
 
 class TextFileView(TemplateView):

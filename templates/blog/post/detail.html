@@ -3,16 +3,40 @@
 {% block title %}{{ post.title }}{% endblock %}
 
 {% block content %}
-  <h1>{{ post.title }}</h1>
-  <p>Published {{ post.publish }} by {{ post.author }}</p>
-  {{ post.body }}
-  <h2>{{ top_level_comments.count }} comment{{ top_level_comments.count|pluralize }}</h2>
-  {% for comment in top_level_comments %}
-    <div class="comment">
-      {% include "blog/post/includes/comment.html" with comment=comment post=post %}
-    </div>
-  {% empty %}
-    <p>There are no comments.</p>
-  {% endfor %}
-  <a href="{% url 'posts:post_comment' post.id %}">Add a new Comment</a>
+<h1>{{ post.title }}</h1>
+<p>Published {{ post.publish }} by {{ post.author }}</p>
+{{ post.body }}
+<h2>{{ comments_page.paginator.count }} comment{{ comments_page.paginator.count|pluralize }}</h2>
+
+{% for comment in comments_page %}
+<div class="comment">
+  {% include "blog/post/includes/comment.html" with comment=comment post=post level=0 %}
+</div>
+{% empty %}
+<p>There are no comments.</p>
+{% endfor %}
+
+{% if comments_page.has_other_pages %}
+<div class="pagination">
+  <span class="step-links">
+    {% if comments_page.has_previous %}
+    <a href="?page=1">&laquo; first</a>
+    <a href="?page={{ comments_page.previous_page_number }}">previous</a>
+    {% endif %}
+
+    <span class="current">
+      Page {{ comments_page.number }} of {{ comments_page.paginator.num_pages }}.
+    </span>
+
+    {% if comments_page.has_next %}
+    <a href="?page={{ comments_page.next_page_number }}">next</a>
+    <a href="?page={{ comments_page.paginator.num_pages }}">last &raquo;</a>
+    {% endif %}
+  </span>
+</div>
+{% endif %}
+
+<a href="{% url 'posts:post_comment' post.id %}">Add a new Comment</a>
+
+
 {% endblock %}
