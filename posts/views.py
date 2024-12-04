@@ -7,6 +7,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import View
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.http import JsonResponse
 
 
 from posts.models import Post, Comment
@@ -62,7 +63,7 @@ class PostDetailView(DetailView):
         except EmptyPage:
             comments_page = paginator.page(paginator.num_pages)
         context["comments_page"] = comments_page
-
+        context["comment_form"] = CommentForm(user=self.request.user)
         return context
 
 
@@ -106,8 +107,21 @@ class AddCommentView(BaseCommentView):
             if request.user.is_authenticated:
                 comment.author = request.user
             comment.save()
-            return redirect("posts:post_detail", pk=post.pk)
-        return self.render_to_response({"form": form, "post": post})
+            # Render the new comment to HTML
+            comment_html = render_to_string(
+                "blog/post/includes/comment.html",
+                {"comment": comment, "post": post, "level": 0},
+                request=request,
+            )
+            return JsonResponse({"success": True, "comment_html": comment_html})
+        else:
+            # Render form errors to HTML
+            errors_html = render_to_string(
+                "blog/post/includes/form_errors.html",
+                {"form": form},
+                request=request,
+            )
+            return JsonResponse({"success": False, "errors_html": errors_html})
 
 
 class ReplyCommentView(BaseCommentView):
@@ -135,10 +149,23 @@ class ReplyCommentView(BaseCommentView):
             if request.user.is_authenticated:
                 comment.author = request.user
             comment.save()
-            return redirect("posts:post_detail", pk=post.pk)
-        return self.render_to_response(
-            {"form": form, "post": post, "parent_comment": parent_comment}
-        )
+            # Render the new comment to HTML
+            comment_html = render_to_string(
+                "blog/post/includes/comment.html",
+                {"comment": comment, "post": post, "level": 0},
+                request=request,
+            )
+            return JsonResponse({"success": True, "comment_html": comment_html})
+        else:
+            # Render form errors to HTML
+            errors_html = render_to_string(
+                "blog/post/includes/form_errors.html",
+                {"form": form},
+                request=request,
+            )
+            return JsonResponse({"success": False, "errors_html": errors_html})
+
+
 
 
 class TextFileView(View):

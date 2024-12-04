@@ -8,20 +8,20 @@
 {{ post.body }}
 <h2>{{ comments_page.paginator.count }} comment{{ comments_page.paginator.count|pluralize }}</h2>
 
-{% for comment in comments_page %}
-<div class="comment">
-  {% include "blog/post/includes/comment.html" with comment=comment post=post level=0 %}
+<div id="comments">
+  {% for comment in comments_page %}
+  <div class="comment">
+    {% include "blog/post/includes/comment.html" with comment=comment post=post level=0 %}
+  </div>
+  {% empty %}
+  <p>There are no comments.</p>
+  {% endfor %}
 </div>
-{% empty %}
-<p>There are no comments.</p>
-{% endfor %}
-
 {% if comments_page.has_other_pages %}
 <div class="pagination">
   <span class="step-links">
     {% if comments_page.has_previous %}
-    <a href="?page=1">&laquo; first</a>
-    <a href="?page={{ comments_page.previous_page_number }}">previous</a>
+    <a href="?page={{ comments_page.previous_page_number }}">Previous</a>
     {% endif %}
 
     <span class="current">
@@ -29,8 +29,7 @@
     </span>
 
     {% if comments_page.has_next %}
-    <a href="?page={{ comments_page.next_page_number }}">next</a>
-    <a href="?page={{ comments_page.paginator.num_pages }}">last &raquo;</a>
+    <a href="?page={{ comments_page.next_page_number }}">Next</a>
     {% endif %}
   </span>
 </div>

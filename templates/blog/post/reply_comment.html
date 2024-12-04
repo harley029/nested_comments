@@ -6,28 +6,108 @@
 <main>
     <div>
         <h1>Reply to Comment by
-        {% if parent_comment.author %}
-        "{{ parent_comment.author.username }}"
-        {% else %}
-        "{{ parent_comment.name }}"
-        {% endif %}
+            {% if parent_comment.author %}
+            "{{ parent_comment.author.username }}"
+            {% else %}
+            "{{ parent_comment.name }}"
+            {% endif %}
         </h1>
-        <div>
+        <div style="display: flex; align-items: flex-start; gap: 20px;">
             <p>{{ parent_comment.body|safe }}</p>
-            <form method="post" action="{% url 'posts:comment_reply' pk=post.id parent_comment_id=parent_comment.id %}"
-                enctype="multipart/form-data"
-                novalidate="">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <div>
+
+            <div style="flex: 1;">
+                <form method="post"
+                    action="{% url 'posts:comment_reply' pk=post.id parent_comment_id=parent_comment.id %}"
+                    id="comment_form" enctype="multipart/form-data" novalidate="">
+                    {% csrf_token %}
+                    {{ form.as_p }}
                     <div>
-                        <input type="submit" value="Save" name="save">
-                        <input type="submit" value="Cancel" name="cancel">
+                        <div>
+                            <input type="submit" value="Save" name="save">
+                            <input type="submit" value="Cancel" name="cancel">
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+                <div id="form-errors"></div>
+            </div>
         </div>
         <br class="clear">
     </div>
+
+    <div style="flex: 1; border: 1px solid #ccc; padding: 10px;">
+        <h3>Preview:</h3>
+        <div id="comment-preview" class="comment-preview">
+            <p><em>Your comment will appear here...</em></p>
+        </div>
+    </div>
+    <div id="form-errors"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const bodyField = document.getElementById('id_body');
+            const previewArea = document.getElementById('comment-preview');
+            const form = document.getElementById('comment_form');  // Ensure this matches your form's ID
+            const errorsDiv = document.getElementById('form-errors');
+
+            function updatePreview() {
+                let content = bodyField.value;
+                if (content.trim() === '') {
+                    previewArea.innerHTML = '<p><em>Your comment will appear here...</em></p>';
+                } else {
+                    // Optional: Render Markdown here
+                    // content = marked(content);
+                    // For now, we'll escape HTML tags
+                    content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    previewArea.innerHTML = '<p>' + content + '</p>';
+                }
+            }
+
+            bodyField.addEventListener('input', updatePreview);
+            // Initialize preview
+            updatePreview();
+
+            // Add event listener for form submission
+            form.addEventListener('submit', function (event) {
+                const submitter = event.submitter || document.activeElement;
+                if (submitter.name === 'cancel') {
+                    // Allow default form submission
+                    return;
+                }
+
+                event.preventDefault();  // Prevent the default form submission
+
+                const formData = new FormData(form);
+
+                // Send AJAX request
+                fetch(form.action, {  // Use form.action to get the correct URL
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: formData,
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Clear the form
+                            form.reset();
+                            // Reset the preview
+                            previewArea.innerHTML = '<p><em>Your comment will appear here...</em></p>';
+                            // Redirect to the post detail page or update the comments section
+                            window.location.href = "{% url 'posts:post_detail' post.pk %}";
+                        } else {
+                            // Handle form errors
+                            errorsDiv.innerHTML = data.errors_html;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        errorsDiv.innerHTML = '<p>An error occurred. Please try again.</p>';
+                    });
+            });
+        });
+    </script>
+
+
 </main>
 {% endblock %}
