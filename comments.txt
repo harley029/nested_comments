@@ -16,3 +16,20 @@
             {% include "pagination.html" with page=page_obj %}
         на  
             {% include "pagination.html" with page=posts %}
+
+2. Для просмотра текстовых файлов в модальном окне использовать
+    https://fancyapps.com/fancybox/
+    2.1. В хедере подключить стили:
+        <link href="{% static 'css/fancybox.css' %}" rel="stylesheet">
+   
+    2.2. В конце HTML перед </body>:
+        <script src="{% static 'js/fancybox.umd.js' %}"></script>
+        <script>
+            Fancybox.bind("[data-fancybox]", {
+                Html: {
+                    iframeAttr: {
+                        allow: "encrypted-media *; autoplay; fullscreen"
+                    }
+                }
+            }) 
+        </script>

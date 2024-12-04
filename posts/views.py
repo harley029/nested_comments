@@ -4,6 +4,9 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.generic import View
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 
 from posts.models import Post, Comment
@@ -33,7 +36,7 @@ class BaseCommentView(TemplateView):
 class PostListView(ListView):
     queryset = Post.objects.all()
     context_object_name = "posts"
-    paginate_by = 3
+    paginate_by = 4
     template_name = "blog/post/list.html"
 
 
@@ -138,17 +141,17 @@ class ReplyCommentView(BaseCommentView):
         )
 
 
-class TextFileView(TemplateView):
-    template_name = "blog/post/txt_file_view.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        comment_id = kwargs.get("comment_id")
+class TextFileView(View):
+    def get(self, request, comment_id):
         comment = get_object_or_404(Comment, pk=comment_id)
+        if not comment.text_file:
+            return HttpResponse("No text file attached to this comment.", status=404)
         try:
             with comment.text_file.open("r") as file:
-                context["file_content"] = file.read()
+                file_content = file.read()
         except Exception as e:
-            raise Http404(f"Error reading the file: {e}")
-        context["post"] = comment.post
-        return context
+            return HttpResponse(f"Error reading the file: {e}", status=500)
+        html_content = render_to_string(
+            "blog/post/includes/text_file_modal.html", {"file_content": file_content}
+        )
+        return HttpResponse(html_content, content_type="text/html; charset=utf-8")

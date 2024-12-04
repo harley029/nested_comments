@@ -20,7 +20,9 @@
     {% endif %}
     {% if comment.text_file %}
     <div>
-        <a href="{% url 'posts:text_file_view' comment.id %}">View the text file</a>
+        <a data-fancybox data-type="ajax" data-src="{% url 'posts:text_file_view' comment.id %}" href="javascript:;">
+            View Text File
+        </a>
     </div>
     {% endif %}
     <p>
