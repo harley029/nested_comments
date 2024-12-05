@@ -2,13 +2,13 @@ from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import ListView, TemplateView, DetailView
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import View
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-
+from django.db.models.functions import Coalesce
+from django.db import models
 
 from posts.models import Post, Comment
 from posts.forms import PostForm, CommentForm
@@ -51,18 +51,45 @@ class PostDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         comments = self.object.comments.all()
         context["comments"] = comments
-        top_level_comments = self.object.comments.filter(parent_comment__isnull=True)
-        context["top_level_comments"] = top_level_comments
+
+        sort_field = self.request.GET.get("sort", "created")
+        sort_order = self.request.GET.get("order", "desc")
+        valid_sort_fields = {
+            "username": "username_display",
+            "email": "email_display",
+            "created": "created",
+        }
+        sort_field_db = valid_sort_fields.get(sort_field, "created")
+        if sort_order == "asc":
+            ordering = sort_field_db
+        else:
+            ordering = "-" + sort_field_db
+        top_level_comments = (
+            self.object.comments.filter(parent_comment__isnull=True)
+            .annotate(
+                username_display=Coalesce(
+                    "author__username", "name", output_field=models.CharField()
+                ),
+                email_display=Coalesce(
+                    "author__email", "email", output_field=models.CharField()
+                ),
+            )
+            .order_by(ordering)
+        )
 
         page = self.request.GET.get("page", 1)
-        paginator = Paginator(top_level_comments, 2)
+        paginator = Paginator(top_level_comments, 25)
         try:
             comments_page = paginator.page(page)
         except PageNotAnInteger:
             comments_page = paginator.page(1)
         except EmptyPage:
             comments_page = paginator.page(paginator.num_pages)
+
+        context["top_level_comments"] = top_level_comments
         context["comments_page"] = comments_page
+        context["sort_field"] = sort_field
+        context["sort_order"] = sort_order
         context["comment_form"] = CommentForm(user=self.request.user)
         return context
 
@@ -166,8 +193,6 @@ class ReplyCommentView(BaseCommentView):
             return JsonResponse({"success": False, "errors_html": errors_html})
 
 
-
-
 class TextFileView(View):
     def get(self, request, comment_id):
         comment = get_object_or_404(Comment, pk=comment_id)
@@ -182,3 +207,23 @@ class TextFileView(View):
             "blog/post/includes/text_file_modal.html", {"file_content": file_content}
         )
         return HttpResponse(html_content, content_type="text/html; charset=utf-8")
+
+
+class CommentDetailView(DetailView):
+    model = Comment
+    template_name = "blog/post/comment_detail.html"
+    context_object_name = "comment"
+    pk_url_kwarg = "comment_id"
+
+    def get_queryset(self):
+        # Ensure we only get top-level comments
+        return Comment.objects.filter(parent_comment__isnull=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        post_id = self.kwargs.get("post_id")
+        post = get_object_or_404(Post, pk=post_id)
+        context["post"] = post
+        # Get all nested replies to this comment
+        context["replies"] = self.object.get_descendants()
+        return context

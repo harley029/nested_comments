@@ -11,4 +11,5 @@ urlpatterns = [
     path("<int:post_id>/add_comment/", views.AddCommentView.as_view(), name="post_comment"),
     path("<int:pk>/comment/<int:parent_comment_id>/reply/", views.ReplyCommentView.as_view(), name="comment_reply",),
     path("comment/<int:comment_id>/text_file/", views.TextFileView.as_view(), name="text_file_view"),
+    path("<int:post_id>/comment/<int:comment_id>/", views.CommentDetailView.as_view(), name="comment_detail"),
 ]

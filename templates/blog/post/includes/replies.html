@@ -1,0 +1,23 @@
+{% for reply in comments %}
+<div style="margin-left: {{ level|default:20 }}px; border-left: 1px solid #ccc; padding-left: 10px;">
+    <p>
+        {% if reply.author %}
+        {{ reply.author.username }}
+        {% else %}
+        {{ reply.name }}
+        {% endif %}
+        on {{ reply.created }}
+    </p>
+    <div>
+        {{ reply.body|safe }}
+    </div>
+    <!-- Link to reply to this comment -->
+    <p>
+        <a href="{% url 'posts:comment_reply' pk=post.pk parent_comment_id=reply.pk %}">Reply</a>
+    </p>
+    <!-- Recursively include replies -->
+    {% if reply.replies.exists %}
+    {% include "blog/post/includes/replies.html" with comments=reply.replies.all level=level|add:20 post=post %}
+    {% endif %}
+</div>
+{% endfor %}
