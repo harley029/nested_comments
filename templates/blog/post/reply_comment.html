@@ -1,6 +1,5 @@
 {% extends "blog/base.html" %}
 
-
 {% block title %}Reply to Comment{% endblock %}
 
 {% block content %}
@@ -15,145 +14,11 @@
         </h1>
         <div style="display: flex; align-items: flex-start; gap: 20px;">
             <p>{{ parent_comment.body|safe }}</p>
-
-            <div style="flex: 1;">
-                <form method="post"
-                    action="{% url 'posts:comment_reply' pk=post.id parent_comment_id=parent_comment.id %}"
-                    id="comment_form" enctype="multipart/form-data" novalidate="">
-
-                    <div id="toolbar">
-                        <button type="button" data-tag="i">[i]</button>
-                        <button type="button" data-tag="strong">[strong]</button>
-                        <button type="button" data-tag="code">[code]</button>
-                        <button type="button" data-tag="a">[a]</button>
-                    </div>
-
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <div>
-                        <div>
-                            <input type="submit" value="Save" name="save">
-                            <input type="submit" value="Cancel" name="cancel">
-                        </div>
-                    </div>
-                </form>
-                <div id="form-errors"></div>
-            </div>
+            {% include "blog/post/includes/comment_form.html" with form_action_url=form_action_url %}
         </div>
         <br class="clear">
     </div>
-
-    <div style="flex: 1; border: 1px solid #ccc; padding: 10px;">
-        <h3>Preview:</h3>
-        <div id="comment-preview" class="comment-preview">
-            <p><em>Your comment will appear here...</em></p>
-        </div>
-    </div>
-    <div id="form-errors"></div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const bodyField = document.getElementById('id_body');
-            const toolbar = document.getElementById('toolbar');
-
-            toolbar.addEventListener('click', function (event) {
-                if (event.target.tagName === 'BUTTON') {
-                    const tag = event.target.getAttribute('data-tag');
-                    insertTag(bodyField, tag);
-                    updatePreview();
-                }
-            });
-
-            function insertTag(textarea, tag) {
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const selectedText = textarea.value.substring(start, end);
-                let insertText = '';
-
-                if (tag === 'a') {
-                    const url = prompt('Enter the URL', 'http://');
-                    if (url) {
-                        insertText = `<a href="${url}">${selectedText || 'link text'}</a>`;
-                    } else {
-                        return;
-                    }
-                } else {
-                    insertText = `<${tag}>${selectedText}</${tag}>`;
-                }
-
-                textarea.setRangeText(insertText, start, end, 'end');
-                textarea.focus();
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const bodyField = document.getElementById('id_body');
-            const previewArea = document.getElementById('comment-preview');
-            const form = document.getElementById('comment_form');  // Ensure this matches your form's ID
-            const errorsDiv = document.getElementById('form-errors');
-
-            function updatePreview() {
-                let content = bodyField.value;
-                if (content.trim() === '') {
-                    previewArea.innerHTML = '<p><em>Your comment will appear here...</em></p>';
-                } else {
-                    // Optional: Render Markdown here
-                    // content = marked(content);
-                    // For now, we'll escape HTML tags
-                    content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    previewArea.innerHTML = '<p>' + content + '</p>';
-                }
-            }
-
-            bodyField.addEventListener('input', updatePreview);
-            // Initialize preview
-            updatePreview();
-
-            // Add event listener for form submission
-            form.addEventListener('submit', function (event) {
-                const submitter = event.submitter || document.activeElement;
-                if (submitter.name === 'cancel') {
-                    // Allow default form submission
-                    return;
-                }
-
-                event.preventDefault();  // Prevent the default form submission
-
-                const formData = new FormData(form);
-
-                // Send AJAX request
-                fetch(form.action, {  // Use form.action to get the correct URL
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: formData,
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Clear the form
-                            form.reset();
-                            // Reset the preview
-                            previewArea.innerHTML = '<p><em>Your comment will appear here...</em></p>';
-                            // Redirect to the post detail page or update the comments section
-                            window.location.href = "{% url 'posts:post_detail' post.pk %}";
-                        } else {
-                            // Handle form errors
-                            const captchaImg = document.querySelector('img.captcha');
-                            if (captchaImg) {
-                                captchaImg.src = captchaImg.src.split('?')[0] + '?reload=' + new Date().getTime();
-                            }
-                            errorsDiv.innerHTML = data.errors_html;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        errorsDiv.innerHTML = '<p>An error occurred. Please try again.</p>';
-                    });
-            });
-        });
-    </script>
-
+    {% include "blog/post/includes/comment_preview.html" %}
+    {% include "blog/post/includes/comment_script.html" with redirect_url=redirect_url %}
 </main>
 {% endblock %}

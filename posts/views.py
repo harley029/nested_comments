@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.db.models.functions import Coalesce
 from django.db import models
+from django.urls import reverse
 
 from posts.models import Post, Comment
 from posts.forms import PostForm, CommentForm
@@ -120,7 +121,13 @@ class AddCommentView(BaseCommentView):
     def get(self, request, *args, **kwargs):
         post, _ = self.get_post_and_parent_comment(kwargs)
         form = CommentForm(user=request.user)
-        return self.render_to_response({"form": form, "post": post})
+        context = {
+            "form": form,
+            "post": post,
+            "form_action_url": reverse("posts:post_comment", args=[post.id]),
+            "redirect_url": reverse("posts:post_detail", args=[post.id]),
+        }
+        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         post, _ = self.get_post_and_parent_comment(kwargs)
@@ -159,9 +166,17 @@ class ReplyCommentView(BaseCommentView):
         form = CommentForm(
             user=request.user, initial={"parent_comment": parent_comment.id}
         )
-        return self.render_to_response(
-            {"form": form, "post": post, "parent_comment": parent_comment}
-        )
+        context = {
+            "form": form,
+            "post": post,
+            "parent_comment": parent_comment,
+            "form_action_url": reverse(
+                "posts:comment_reply",
+                kwargs={"pk": post.id, "parent_comment_id": parent_comment.id},
+            ),
+            "redirect_url": reverse("posts:post_detail", args=[post.id]),
+        }
+        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         post, parent_comment = self.get_post_and_parent_comment(kwargs)
