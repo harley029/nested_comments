@@ -66,7 +66,7 @@ class PostDetailView(DetailView):
         else:
             ordering = "-" + sort_field_db
         top_level_comments = (
-            self.object.comments.filter(parent_comment__isnull=True)
+            self.object.comments.filter(parent__isnull=True)
             .annotate(
                 username_display=Coalesce(
                     "author__username", "name", output_field=models.CharField()
@@ -163,9 +163,7 @@ class ReplyCommentView(BaseCommentView):
 
     def get(self, request, *args, **kwargs):
         post, parent_comment = self.get_post_and_parent_comment(kwargs)
-        form = CommentForm(
-            user=request.user, initial={"parent_comment": parent_comment.id}
-        )
+        form = CommentForm(user=request.user, initial={"parent": parent_comment.id})
         context = {
             "form": form,
             "post": post,
@@ -186,7 +184,7 @@ class ReplyCommentView(BaseCommentView):
         if form.is_valid():
             comment = form.save(commit=False)
             comment.post = post
-            comment.parent_comment = parent_comment
+            comment.parent = parent_comment
             comment.client_ip = self.get_client_ip(request)
             if request.user.is_authenticated:
                 comment.author = request.user
@@ -232,7 +230,7 @@ class CommentDetailView(DetailView):
 
     def get_queryset(self):
         # Ensure we only get top-level comments
-        return Comment.objects.filter(parent_comment__isnull=True)
+        return Comment.objects.filter(parent__isnull=True)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -240,5 +238,5 @@ class CommentDetailView(DetailView):
         post = get_object_or_404(Post, pk=post_id)
         context["post"] = post
         # Get all nested replies to this comment
-        context["replies"] = self.object.get_descendants()
+        context["replies"] = self.object.replies.all()
         return context

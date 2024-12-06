@@ -33,7 +33,7 @@ class Comment(BaseModel):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="comments", null=True, blank=True
     )
-    parent_comment = models.ForeignKey(
+    parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
     )
 

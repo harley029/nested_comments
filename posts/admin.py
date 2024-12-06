@@ -18,7 +18,7 @@ class CommentAdmin(admin.ModelAdmin):
         "email",
         "author",
         "post",
-        "parent_comment",
+        "parent",
         "client_ip",
         "image",
         "text_file",

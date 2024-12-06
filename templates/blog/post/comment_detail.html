@@ -19,6 +19,21 @@
     {{ comment.body|safe }}
 </div>
 
+{% if comment.image %}
+<div>
+    <a href="{{ comment.image.url }}" data-lightbox="image-1">
+        <img src="{{ comment.image.url }}" alt="Image" style="max-width: 40px; max-height: 30px;">
+    </a>
+</div>
+{% endif %}
+{% if comment.text_file %}
+<div>
+    <a data-fancybox data-type="ajax" data-src="{% url 'posts:text_file_view' comment.id %}" href="javascript:;">
+        View Text File
+    </a>
+</div>
+{% endif %}
+
 <!-- Display the replies -->
 <h3>Replies:</h3>
 {% include "blog/post/includes/replies.html" with comments=replies post=post %}

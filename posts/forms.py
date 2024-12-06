@@ -76,7 +76,7 @@ class CommentForm(forms.ModelForm):
             "image",
             "text_file",
             "captcha",
-            "parent_comment",
+            "parent",
         ]
         widgets = {
             "body": forms.Textarea(attrs={"rows": 5}),
@@ -95,7 +95,7 @@ class CommentForm(forms.ModelForm):
             self.fields["name"].required = True
             self.fields["email"].required = True
         # Спрятать поле parent_comment
-        self.fields["parent_comment"].widget = forms.HiddenInput()
+        self.fields["parent"].widget = forms.HiddenInput()
 
     def clean_name(self):
         name = self.cleaned_data.get("name")
