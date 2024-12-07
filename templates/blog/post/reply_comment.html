@@ -12,7 +12,7 @@
             "{{ parent_comment.name }}"
             {% endif %}
         </h1>
-        <div style="display: flex; align-items: flex-start; gap: 20px;">
+        <div class="comment_in_reply">
             <p>{{ parent_comment.body|safe }}</p>
             {% include "blog/post/includes/comment_form.html" with form_action_url=form_action_url %}
         </div>

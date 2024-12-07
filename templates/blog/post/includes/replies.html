@@ -1,97 +1,37 @@
-{% extends "blog/base.html" %}
-
-{% block title %}{{ post.title }}{% endblock %}
-
-{% block content %}
-<h1>{{ post.title }}</h1>
-<p>Published {{ post.publish }} by {{ post.author }}</p>
-{{ post.body }}
-<h2>{{ comments_page.paginator.count }} comment{{ comments_page.paginator.count|pluralize }}</h2>
-
-<table class="comments-table">
-    <thead>
-        <tr>
-            <th style="width: 15%;">
-                <a
-                    href="?sort=username&order={% if sort_field == 'username' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
-                    User Name
-                    {% if sort_field == 'username' %}
-                    {% if sort_order == 'asc' %}
-                    &#9650; <!-- Символ стрелки вверх -->
-                    {% else %}
-                    &#9660; <!-- Символ стрелки вниз -->
-                    {% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th style="width: 25%;">
-                <a
-                    href="?sort=email&order={% if sort_field == 'email' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Email
-                    {% if sort_field == 'email' %}
-                    {% if sort_order == 'asc' %}
-                    &#9650;
-                    {% else %}
-                    &#9660;
-                    {% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th style="width: 25%;">
-                <a
-                    href="?sort=created&order={% if sort_field == 'created' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
-                    Date Added
-                    {% if sort_field == 'created' %}
-                    {% if sort_order == 'asc' %}
-                    &#9650;
-                    {% else %}
-                    &#9660;
-                    {% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th style="width: 41%;">Comment</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for comment in comments_page %}
-        <tr>
-            <td>{{ comment.username_display }}</td>
-            <td>{{ comment.email_display }}</td>
-            <td>{{ comment.created }}</td>
-            <td>
-                <a href="{% url 'posts:comment_detail' post_id=post.pk comment_id=comment.pk %}">
-                    {{ comment.body|truncatewords:10|safe }}
-                </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="4">There are no comments.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-{% if comments_page.has_other_pages %}
-<div class="pagination">
-    <span class="step-links">
-        {% if comments_page.has_previous %}
-        <a
-            href="?page={{ comments_page.previous_page_number }}&sort={{ sort_field }}&order={{ sort_order }}">Previous</a>
+{% load static %}
+{% for reply in comments %}
+<div style="margin-left: {{ level|default:20 }}px; border-left: 1px solid #ccc; padding-left: 10px;">
+    <p>
+        {% if reply.author %}
+        {{ reply.author.username }}
+        {% else %}
+        {{ reply.name }}
         {% endif %}
-
-        <span class="current">
-            Page {{ comments_page.number }} of {{ comments_page.paginator.num_pages }}.
-        </span>
-
-        {% if comments_page.has_next %}
-        <a href="?page={{ comments_page.next_page_number }}&sort={{ sort_field }}&order={{ sort_order }}">Next</a>
+        on {{ reply.created }}
+    </p>
+    <div>
+        {{ reply.body|safe }}
+    </div>
+    {% if reply.image or reply.text_file %}
+    <div class="files-container">
+        {% if reply.image %}
+        <a href="{{ reply.image.url }}" data-lightbox="image-1">
+            <img src="{{ reply.image.url }}" alt="Image" class="picture_preview">
+        </a>
         {% endif %}
-    </span>
+        {% if reply.text_file %}
+        <a data-fancybox data-type="ajax" data-src="{% url 'posts:text_file_view' reply.id %}" href="javascript:;"
+            class="file_link">
+            <img src="{% static 'images/text_file_icon.png' %}" alt="Text File Icon" class="file_icon">
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+    <p>
+        <a href="{% url 'posts:comment_reply' pk=post.pk parent_comment_id=reply.pk %}">Reply</a>
+    </p>
+    {% if reply.replies.exists %}
+    {% include "blog/post/includes/replies.html" with comments=reply.replies.all level=level|add:20 post=post %}
+    {% endif %}
 </div>
-{% endif %}
-
-<a href="{% url 'posts:post_comment' post.id %}">Add a new Comment</a>
-
-{% endblock %}
+{% endfor %}

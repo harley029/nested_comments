@@ -117,3 +117,43 @@ input[type=submit] {
 .comments-table th {
     background-color: #f2f2f2;
 }
+
+.picture_preview {
+    max-width: 40px; 
+    max-height: 30px;
+}
+
+.comment_in_reply {
+    display: flex; 
+    align-items: flex-start; 
+    gap: 20px;
+}
+
+.add_comment {
+    display: flex; 
+    align-items: flex-start; 
+    gap: 20px;
+}
+
+.comment_preview {
+    flex: 1; 
+    border: 1px solid #ccc; 
+    padding: 10px;
+}
+
+.files-container {
+    display: inline-block; /* или flex, если хотите гибкую верстку */
+    vertical-align: middle;
+}
+
+.files-container a {
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+.file_icon {
+    max-width: 40px; 
+    max-height: 30px; 
+    /* Можно при желании настроить размеры под пиктограмму файла */
+}
