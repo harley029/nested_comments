@@ -44,4 +44,8 @@
 
 - Python 3.12+
 - Django 5.0+
-- PostgreSQL
+- PostgreSQL 13+
+
+## Дополнительные сведения
+
+В папке Docker находятся файли Docker, env для самостоятельной сборки и запуска образов проекта через Docker compose или Docker Hub. 
