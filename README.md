@@ -11,30 +11,30 @@
 ### Вариант с запущеным сервером PostgreSQL
 1. Клонируйте репозиторий
 2. Установите зависимости:
-pip install -r requirements.txt
+    - pip install -r requirements.txt
 3. Заполните переменные окружения в файле .env
 4. Выполните миграции:
-python manage.py migrate
+    - python manage.py migrate
 5. Создайте администратора:
-python manage.py createsuperuser
+    - python manage.py createsuperuser
 6. Запустите сервер разработки:
-python manage.py runserver
+    - python manage.py runserver
 
-### Вариант с использованием Docker
+### Вариант с использованием Docker Compose
 1. Клонируйте репозиторий
 2. Запустите Docker
 3. Заполните переменные окружения в файле .env
 4. Создайте образ и запустите контейнер:
-docker compose up --build -d
+    - docker compose up --build -d
 5. Выполните миграции:
-docker compose exec web python manage.py migrate
+    - docker compose exec web python manage.py migrate
 6. Создайте администратора:
-docker-compose exec web python manage.py createsuperuser
+    - docker-compose exec web python manage.py createsuperuser
 
 ### Вариант с использованием готового и настроенного образа Docker Hub
 1. Клонируйте и запустите контейнер:
-docker pull harley029/nested_comments
-docker run -p 8000:8000 --name nested_comments harley029/nested_comments
+    - docker pull harley029/nested_comments
+    - docker run -p 8000:8000 --name nested_comments harley029/nested_comments
 
 ## Использование
 
