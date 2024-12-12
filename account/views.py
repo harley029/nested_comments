@@ -8,7 +8,7 @@ class RegisterView(FormView):
     template_name = "account/register.html"
     form_class = UserRegistrationForm
 
-    # dispatch попереджає перехід на signup залогіненому юзеру
+    # dispatch предотвращает переход на signup залогиненому пользователю
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return redirect(to="posts")

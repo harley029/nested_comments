@@ -1,12 +1,10 @@
 from django.shortcuts import redirect, get_object_or_404
-from django.views.generic import ListView, TemplateView, DetailView
+from django.views.generic import ListView, TemplateView, DetailView, View
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.views.generic import View
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
-from django.http import JsonResponse
 from django.db.models.functions import Coalesce
 from django.db import models
 from django.urls import reverse
@@ -141,7 +139,7 @@ class AddCommentView(BaseCommentView):
             if request.user.is_authenticated:
                 comment.author = request.user
             comment.save()
-            # Render the new comment to HTML
+            # Перерисовать новый комментарий в  HTML
             comment_html = render_to_string(
                 "blog/post/includes/comment.html",
                 {"comment": comment, "post": post, "level": 0},
@@ -149,7 +147,7 @@ class AddCommentView(BaseCommentView):
             )
             return JsonResponse({"success": True, "comment_html": comment_html})
         else:
-            # Render form errors to HTML
+            # Перерисовать ошибки формы в HTML
             errors_html = render_to_string(
                 "blog/post/includes/form_errors.html",
                 {"form": form},
@@ -189,7 +187,6 @@ class ReplyCommentView(BaseCommentView):
             if request.user.is_authenticated:
                 comment.author = request.user
             comment.save()
-            # Render the new comment to HTML
             comment_html = render_to_string(
                 "blog/post/includes/comment.html",
                 {"comment": comment, "post": post, "level": 0},
@@ -197,7 +194,6 @@ class ReplyCommentView(BaseCommentView):
             )
             return JsonResponse({"success": True, "comment_html": comment_html})
         else:
-            # Render form errors to HTML
             errors_html = render_to_string(
                 "blog/post/includes/form_errors.html",
                 {"form": form},
@@ -229,7 +225,7 @@ class CommentDetailView(DetailView):
     pk_url_kwarg = "comment_id"
 
     def get_queryset(self):
-        # Ensure we only get top-level comments
+        # Получить родительские комментарии
         return Comment.objects.filter(parent__isnull=True)
 
     def get_context_data(self, **kwargs):
@@ -237,6 +233,6 @@ class CommentDetailView(DetailView):
         post_id = self.kwargs.get("post_id")
         post = get_object_or_404(Post, pk=post_id)
         context["post"] = post
-        # Get all nested replies to this comment
+        # Получить вложенные ответы на комментарий
         context["replies"] = self.object.replies.all()
         return context

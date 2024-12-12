@@ -110,12 +110,12 @@ class CommentForm(forms.ModelForm):
         allowed_tags = ["a", "code", "i", "strong"]
         allowed_attrs = {"a": ["href", "title"]}
 
-        # Validate the original body for unmatched or disallowed tags
+        # Проверить наличие неразрешенных или незакрытых тегов
         errors = validate_html(body, allowed_tags)
         if errors:
             raise forms.ValidationError(errors)
 
-        # Clean the body with bleach
+        # Очистить body с помощью bleach
         cleaned_body = bleach.clean(
             body,
             tags=allowed_tags,
