@@ -33,7 +33,7 @@
             if (content.trim() === '') {
                 previewArea.innerHTML = '<p><em>Your comment will appear here...</em></p>';
             } else {
-                // Предполагается, что HTML-теги безопасны, так как вы их очищаете на сервере
+                // HTML-теги безопасны, так как очищены на сервере
                 previewArea.innerHTML = content;
             }
         }
@@ -46,20 +46,20 @@
         });
 
         bodyField.addEventListener('input', updatePreview);
-        // Инициализируем превью
+        // Инициализировать превью
         updatePreview();
 
         form.addEventListener('submit', function (event) {
             const submitter = event.submitter || document.activeElement;
             if (submitter.name === 'cancel') {
-                // Позволяем форме отправиться по умолчанию
+                // Позволить форме отправиться по умолчанию
                 return;
             }
 
-            event.preventDefault();  // Предотвращаем стандартную отправку формы
+            event.preventDefault();  // Предотвратить стандартную отправку формы
             const formData = new FormData(form);
 
-            // Отправляем AJAX-запрос
+            // Отправить AJAX-запрос
             fetch(form.action, {
                 method: 'POST',
                 headers: {
@@ -70,19 +70,19 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Очищаем форму
+                        // Очистить форму
                         form.reset();
                         // Обновляем превью
                         updatePreview();
-                        // Перенаправляем на страницу деталей поста
+                        // Перенаправить на страницу деталей поста
                         window.location.href = "{{ redirect_url }}";
                     } else {
-                        // Обновляем капчу
+                        // Обновить капчу
                         const captchaImg = document.querySelector('img.captcha');
                         if (captchaImg) {
                             captchaImg.src = captchaImg.src.split('?')[0] + '?reload=' + new Date().getTime();
                         }
-                        // Отображаем ошибки формы
+                        // Отобразить ошибки формы
                         errorsDiv.innerHTML = data.errors_html;
                     }
                 })

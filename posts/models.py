@@ -30,12 +30,8 @@ class Comment(BaseModel):
     client_ip = models.GenericIPAddressField(null=True, blank=True)
 
     post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="comments")
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="comments", null=True, blank=True
-    )
-    parent = models.ForeignKey(
-        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
-    )
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
 
     def __str__(self):
         return f"{self.author or self.name} - {self.body[:50]}..."
